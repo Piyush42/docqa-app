@@ -35,7 +35,11 @@ def extract_text_from_pdf(pdf_file):
 def query_claude(document_text, question):
     """Query Claude with document context and user question"""
     try:
-        client = Anthropic(api_key=get_api_key())
+        api_key = get_api_key()
+        if not api_key:
+            return "Error: No API key found"
+            
+        client = Anthropic(api_key=api_key)
         
         prompt = f"""Based on the following document content, please answer the question. If the answer cannot be found in the document, please say so.
 
@@ -46,13 +50,13 @@ Question: {question}
 
 Answer:"""
         
-        response = client.messages.create(
+        message = client.messages.create(
             model="claude-3-haiku-20240307",
             max_tokens=1000,
             messages=[{"role": "user", "content": prompt}]
         )
         
-        return response.content[0].text
+        return message.content[0].text
     except Exception as e:
         return f"Error querying Claude: {str(e)}"
 
