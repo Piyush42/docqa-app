@@ -11,10 +11,18 @@ load_dotenv("config.env")
 def get_api_key():
     # Try Streamlit secrets first (for cloud deployment)
     try:
-        return st.secrets["ANTHROPIC_API_KEY"]
-    except:
-        # Fallback to environment variable (for local development)
-        return os.getenv("ANTHROPIC_API_KEY")
+        api_key = st.secrets["ANTHROPIC_API_KEY"]
+        if api_key:
+            return api_key
+    except Exception as e:
+        st.write(f"Debug: Secrets error: {e}")
+    
+    # Fallback to environment variable (for local development)
+    env_key = os.getenv("ANTHROPIC_API_KEY")
+    if env_key:
+        return env_key
+    
+    return None
 
 def extract_text_from_pdf(pdf_file):
     """Extract text from uploaded PDF file"""
