@@ -2,8 +2,9 @@ import streamlit as st
 import PyPDF2
 import io
 import os
+import requests
+import json
 from dotenv import load_dotenv
-from anthropic import Anthropic
 
 load_dotenv("config.env")
 
@@ -38,8 +39,12 @@ def query_claude(document_text, question):
         api_key = get_api_key()
         if not api_key:
             return "Error: No API key found"
-            
-        client = Anthropic(api_key=api_key)
+        
+        headers = {
+            "Content-Type": "application/json",
+            "x-api-key": api_key,
+            "anthropic-version": "2023-06-01"
+        }
         
         prompt = f"""Based on the following document content, please answer the question. If the answer cannot be found in the document, please say so.
 
@@ -50,13 +55,25 @@ Question: {question}
 
 Answer:"""
         
-        message = client.messages.create(
-            model="claude-3-haiku-20240307",
-            max_tokens=1000,
-            messages=[{"role": "user", "content": prompt}]
+        data = {
+            "model": "claude-3-haiku-20240307",
+            "max_tokens": 1000,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        
+        response = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers=headers,
+            json=data,
+            timeout=30
         )
         
-        return message.content[0].text
+        if response.status_code == 200:
+            result = response.json()
+            return result["content"][0]["text"]
+        else:
+            return f"Error: API returned status {response.status_code}: {response.text}"
+            
     except Exception as e:
         return f"Error querying Claude: {str(e)}"
 
